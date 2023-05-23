@@ -25,6 +25,14 @@ struct ContentView: View {
     
     let timer = Timer.publish(every: 30, on: .main, in: .common).autoconnect()
     
+    // Define the available actions
+    let actions = [
+        Action(name: "Eat", cost: 10, effects: [Effect(type: .hunger, value: 10)]),
+        Action(name: "Drink", cost: 5, effects: [Effect(type: .thirst, value: 10)]),
+        Action(name: "Entertainment", cost: 15, effects: [Effect(type: .entertainment, value: 30)]),
+        Action(name: "Watch Movies", cost: 25, effects: [Effect(type: .entertainment, value: 40), Effect(type: .hunger, value: 5)])
+    ]
+    
     var body: some View {
         NavigationView {
             VStack {
@@ -37,30 +45,15 @@ struct ContentView: View {
                 // Display the person's money
                 Text("Money: $\(person.money)")
                 
-                // Buttons for actions
-                Button("Eat ($10)") {
-                    if person.money >= 10 {
-                        person.money -= 10
-                        person.hunger += 10
+                // Table view for actions
+                List(actions, id: \.name) { action in
+                    Button("\(action.name) ($\(action.cost))") {
+                        performAction(action)
                     }
                 }
-                Button("Drink ($5)") {
-                    if person.money >= 5 {
-                        person.money -= 5
-                        person.thirst += 10
-                    }
-                }
-                Button("Entertainment ($15)") {
-                    if person.money >= 15 {
-                        person.money -= 15
-                        person.entertainment += 30
-                    }
-                }
-                
-                
                 
                 Button("Sleep") {
-                    person.energy += 20
+                    person.energy += 10
                     person.hunger -= 10
                     person.thirst -= 10
                 }
@@ -70,7 +63,7 @@ struct ContentView: View {
                             .foregroundColor(.gray)
                             .disabled(true)
                     } else {
-                        Text("Work (+$35)")
+                        Text("Work (+$15)")
                     }
                 }
             }
@@ -82,6 +75,40 @@ struct ContentView: View {
             }
             .navigationTitle("The Life")
             .navigationBarItems(trailing: menu)
+        }
+    }
+    
+    struct Action: Identifiable {
+        let id = UUID()
+        let name: String
+        let cost: Int
+        let effects: [Effect]
+    }
+    
+    struct Effect {
+        let type: NeedType
+        let value: Int
+    }
+    
+    enum NeedType {
+        case hunger
+        case thirst
+        case entertainment
+    }
+    
+    func performAction(_ action: Action) {
+        if person.money >= action.cost {
+            person.money -= action.cost
+            for effect in action.effects {
+                switch effect.type {
+                case .hunger:
+                    person.hunger += effect.value
+                case .thirst:
+                    person.thirst += effect.value
+                case .entertainment:
+                    person.entertainment += effect.value
+                }
+            }
         }
     }
     
@@ -100,10 +127,18 @@ struct ContentView: View {
         }
     }
     
+    func startNewGame() {
+            person.hunger = 100
+            person.thirst = 100
+            person.entertainment = 100
+            person.energy = 100
+            person.money = 0
+        }
     var menu: some View {
         Menu {
             Button("Start New Game") {
                 // Code for starting a new game
+                startNewGame()
             }
             
             Button("Continue") {
